@@ -8,28 +8,23 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.URI;
 
 public class GameOfLifeFrame extends JFrame {
-    GameOfLifeController game_controller;
-
-    public int[] bornArray;
-    public int[] surviveArray;
-
-    public int percentage;
-    public int S;
+    private GameOfLifeController game_controller;
 
     private JMenuBar menubar = new JMenuBar();
     private JMenu file = new JMenu("File");
     private JMenuItem save, load;
     private JMenu settings = new JMenu("Simulation");
-    private JMenuItem stop, start, autofill, clear;
+    private JMenuItem stop, start, speed;
     private JMenu universe = new JMenu("Universe");
-    private JMenuItem size, rule, speed;
+    private JMenuItem rule, autofill, clear;
     private JMenu help = new JMenu("Help");
-    private JMenuItem descrip;
+    private JMenuItem lifefamily, cellular, doc;
 
-    GameOfLifePanel panel;
-    Thread simulation;
+    private GameOfLifePanel panel;
+    private Thread simulation;
 
     public GameOfLifeFrame(GameOfLifeController controller) {
         super("Game Of Life");
@@ -51,6 +46,7 @@ public class GameOfLifeFrame extends JFrame {
         stop = new JMenuItem("Stop");
         settings.add(stop);
         stop.addActionListener(new StopActionListener());
+        stop.setEnabled(false);
         settings.add(new JSeparator());
         speed = new JMenuItem("Set speed");
         settings.add(speed);
@@ -69,9 +65,17 @@ public class GameOfLifeFrame extends JFrame {
         clear.addActionListener(new ClearActionListener());
 
         menubar.add(help);
-        descrip = new JMenuItem("Description");
-        help.add(descrip);
-        descrip.addActionListener(new DescriptionActionListener());
+        lifefamily = new JMenuItem("Rules lexicon");
+        help.add(lifefamily);
+        lifefamily.addActionListener(new RulesLexiconActionListener());
+        
+        cellular = new JMenuItem("What is a cellular automaton?");
+        help.add(cellular);
+        cellular.addActionListener(new CellularActionListener());
+        
+        doc = new JMenuItem("Documentation");
+        help.add(doc);
+        doc.addActionListener(new DocActionListener());
 
         panel = new GameOfLifePanel(game_controller);
         panel.setSize(700, 700);
@@ -94,6 +98,10 @@ public class GameOfLifeFrame extends JFrame {
             if(e.getSource().equals(start)) {
                 start.setEnabled(false);
                 stop.setEnabled(true);
+                clear.setEnabled(false);
+                rule.setEnabled(false);
+                autofill.setEnabled(false);
+                load.setEnabled(false);
                 simulation = new Thread(panel);
                 simulation.start();
             }
@@ -107,6 +115,10 @@ public class GameOfLifeFrame extends JFrame {
             if(e.getSource().equals(stop)) {
                 start.setEnabled(true);
                 stop.setEnabled(false);
+                clear.setEnabled(true);
+                rule.setEnabled(true);
+                autofill.setEnabled(true);
+                load.setEnabled(true);
                 simulation.interrupt();
             }
         }
@@ -118,8 +130,8 @@ public class GameOfLifeFrame extends JFrame {
             if(e.getSource().equals(save)) {
                 try {
                     StateIO.writeToCSV(game_controller.getUniverseArray());
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
             }
         }
@@ -132,42 +144,45 @@ public class GameOfLifeFrame extends JFrame {
             try {
                 panel.clearPanel();
                 game_controller.getUniverse().clearUniverse();
-                game_controller.getUniverse().FillUniverse(StateIO.readFromCSV());
+                game_controller.getUniverse().FillUniverse(StateIO.readFromCSV("actualstate.csv"));
                 panel.drawUniverse();
-                panel.revalidate();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
+                panel.repaint();
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
         }
     }
 
     private class AutofillActionListener implements ActionListener {
-
+    	public int percentage = 100;
+    	public int S = 3;
+    	
         @Override
         public void actionPerformed(ActionEvent e) {
             if (e.getSource().equals(autofill)) {
 
                 JFrame autofillFrame = new JFrame("Autofill");
-                autofillFrame.setSize(400, 100);
+                autofillFrame.setSize(450, 100);
                 autofillFrame.setResizable(false);
                 autofillFrame.setLocationRelativeTo(null);
                 autofillFrame.setVisible(true);
 
                 JPanel AutoFillPanel = new JPanel();
-                JLabel percentageLabel = new JLabel("Choose percentage: ");
+                JLabel percentageLabel = new JLabel("Choose probability:");
                 AutoFillPanel.add(percentageLabel);
-                Integer[] percentages = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90};
+                Integer[] percentages = {15, 25, 35, 50, 100};
                 JComboBox comboBox = new JComboBox(percentages);
                 AutoFillPanel.add(comboBox);
                 autofillFrame.add(AutoFillPanel);
+                comboBox.setSelectedItem(percentage);
 
-
-                JLabel sizeLabel = new JLabel("Choose size: ");
+                JLabel sizeLabel = new JLabel("%     Choose size:");
                 AutoFillPanel.add(sizeLabel);
-                Integer[] sizes = {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50};
+                Integer[] sizes = {3, 5, 15, 25, 35, 45, 55, 85};
                 JComboBox comboBox2 = new JComboBox(sizes);
                 AutoFillPanel.add(comboBox2);
                 autofillFrame.add(AutoFillPanel);
+                comboBox2.setSelectedItem(S);
 
                 comboBox.addActionListener(new ActionListener() {
                     @Override
@@ -190,10 +205,11 @@ public class GameOfLifeFrame extends JFrame {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         panel.clearPanel();
+                        double P = (double) percentage / 100;
                         game_controller.getUniverse().clearUniverse();
-                        game_controller.getUniverse().AutoFill(percentage, S);
+                        game_controller.getUniverse().AutoFill(P, S/2);
                         panel.drawUniverse();
-                        panel.revalidate();
+                        panel.repaint();
                         autofillFrame.dispose();
                     }
                 });
@@ -208,12 +224,16 @@ public class GameOfLifeFrame extends JFrame {
             panel.clearPanel();
             game_controller.getUniverse().clearUniverse();
             panel.drawUniverse();
-            panel.revalidate();
+            panel.repaint();
+            start.setEnabled(true);
         }
     }
 
     private class SetRuleActionListener implements ActionListener {
-
+    	public int[] bornArray;
+        public int[] surviveArray;
+    	int selectedItemIndex = 6;
+    	
         @Override
         public void actionPerformed(ActionEvent e) {
             if (e.getSource().equals(rule)) {
@@ -222,35 +242,43 @@ public class GameOfLifeFrame extends JFrame {
                 ruleFrame.setResizable(false);
                 ruleFrame.setLocationRelativeTo(null);
                 ruleFrame.setVisible(true);
+                
                 JPanel rulePanel = new JPanel();
-                JLabel ruleLabel = new JLabel("Choose rule: ");
+                JLabel ruleLabel = new JLabel("Choose rule:");
                 rulePanel.add(ruleLabel);
+                
                 String[] rules = {"Game Of Life", "Life Without Death", "Replicator", "Serviettes", "Maze", "Cave", "Custom"};
                 JComboBox comboBox = new JComboBox(rules);
                 rulePanel.add(comboBox);
                 ruleFrame.add(rulePanel);
-                comboBox.setSelectedItem(game_controller.getUniverse().getRule());
+               
+                comboBox.setSelectedIndex(selectedItemIndex);
                 comboBox.addActionListener(new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         switch((String) comboBox.getSelectedItem()) {
                             case "Game Of Life":
                                 game_controller.getUniverse().setRule(new int[]{3}, new int[]{2, 3});
+                                selectedItemIndex = 0;
                                 break;
                             case "Life Without Death":
                                 game_controller.getUniverse().setRule(new int[]{3}, new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8});
+                                selectedItemIndex = 1;
                                 break;
                             case "Replicator":
                                 game_controller.getUniverse().setRule(new int[]{1, 3, 5, 7}, new int[]{1, 3, 5, 7});
+                                selectedItemIndex = 2;
                                 break;
                             case "Serviettes":
                                 game_controller.getUniverse().setRule(new int[]{2, 3, 4}, new int[]{});
-                                break;
+                                selectedItemIndex = 3;                                break;
                             case "Maze":
                                 game_controller.getUniverse().setRule(new int[]{3}, new int[]{1, 2, 3, 4, 5});
+                                selectedItemIndex = 4;
                                 break;
                             case "Cave":
                                 game_controller.getUniverse().setRule(new int[]{6, 7, 8}, new int[]{3, 4, 5, 6, 7, 8});
+                                selectedItemIndex = 5;
                                 break;
                             case "Custom":
                                 JFrame CustomFrame = new JFrame("Custom");
@@ -262,7 +290,7 @@ public class GameOfLifeFrame extends JFrame {
 
                                 JPanel CustomPanel = new JPanel();
                                 JLabel bornLabel = new JLabel("Born:     ");
-                                final JTextField born = new JTextField(16);
+                                JTextField born = new JTextField(16);
                                 JLabel surviveLabel = new JLabel("Survive: ");
                                 JTextField survive = new JTextField(16);
                                 CustomPanel.add(bornLabel);
@@ -277,24 +305,32 @@ public class GameOfLifeFrame extends JFrame {
                                 ruleButton.addActionListener(new ActionListener() {
                                     @Override
                                     public void actionPerformed(ActionEvent e) {
-                                        String[] bornIn = born.getText().split(",");
-                                        bornArray = new int[bornIn.length];
-                                        for (int i = 0; i < bornIn.length; i++) {
-                                            bornArray[i] = Integer.parseInt(bornIn[i]);
-                                        }
-
-                                        String[] surviveIn = survive.getText().split(",");
-                                        surviveArray = new int[surviveIn.length];
-                                        for (int i = 0; i < surviveIn.length; i++) {
-                                            surviveArray[i] = Integer.parseInt(surviveIn[i]);
-                                        }
-                                        game_controller.getUniverse().setRule(bornArray, surviveArray);
+                                    	try {
+	                                        String[] bornIn = born.getText().replace(" ", "").split(",");
+	                                        bornArray = new int[bornIn.length];
+	                                        for (int i = 0; i < bornIn.length; i++) {	                                        	
+                                        		if (Integer.parseInt(bornIn[i]) <= 8 && Integer.parseInt(bornIn[i]) >= 0) {
+                                        			bornArray[i] = Integer.parseInt(bornIn[i]);
+                                        		} else throw new NumberFormatException();	                                        	
+	                                        }
+	
+	                                        String[] surviveIn = survive.getText().replace(" ", "").split(",");
+	                                        surviveArray = new int[surviveIn.length];
+	                                        for (int i = 0; i < surviveIn.length; i++) {	                                        	
+                                        		if (Integer.parseInt(surviveIn[i]) <= 8 && Integer.parseInt(surviveIn[i]) >= 0 ) {
+                                        			surviveArray[i] = Integer.parseInt(surviveIn[i]);
+                                        		} else {
+                                        			throw new NumberFormatException();
+                                        		}	                                       
+	                                        }
+	                                        game_controller.getUniverse().setRule(bornArray, surviveArray);
+                                    	} catch (NumberFormatException ex) {
+                                    		JOptionPane.showMessageDialog(null, "A cell can only have neighbours between 0 and 8.", "Neighbour num error", JOptionPane.ERROR_MESSAGE);
+                                    	}
                                         CustomFrame.dispose();
                                     }
                                 });
-                                break;
-                            default:
-                                game_controller.getUniverse().setRule(new int[]{3}, new int[]{2, 3});
+                                selectedItemIndex = 6;
                                 break;
                         }
                         ruleFrame.dispose();
@@ -314,11 +350,13 @@ public class GameOfLifeFrame extends JFrame {
                 speedFrame.setResizable(false);
                 speedFrame.setLocationRelativeTo(null);
                 speedFrame.setVisible(true);
+                
                 JPanel speedPanel = new JPanel();
                 JLabel speedLabel = new JLabel("Set speed");
                 speedPanel.add(speedLabel);
-                Long[] longs = {100L,200L,500L,1000L};
-                final JComboBox comboBox = new JComboBox(longs);
+                
+                Long[] longs = {100L,200L,500L,1000L,2000L, 3000L};
+                JComboBox comboBox = new JComboBox(longs);
                 speedFrame.add(comboBox);
                 comboBox.setSelectedItem(game_controller.getSpeed());
                 comboBox.addActionListener(new ActionListener(){
@@ -332,12 +370,45 @@ public class GameOfLifeFrame extends JFrame {
         }
     }
 
-    private class DescriptionActionListener implements ActionListener {
+    private class RulesLexiconActionListener implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if(e.getSource().equals(descrip)) {
-                JOptionPane.showMessageDialog(null, "Bla-bla\nbla-bla\nbla-bla");
+            if(e.getSource().equals(lifefamily)) {
+            	Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+                try {
+                    desktop.browse(new URI("http://psoup.math.wisc.edu/mcell/rullex_life.html"));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "http://psoup.math.wisc.edu/mcell/rullex_life.html", "Life family is not reached", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+    
+    private class CellularActionListener implements ActionListener {
+    	@Override
+        public void actionPerformed(ActionEvent e) {
+            if(e.getSource().equals(cellular)) {
+            	Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+                try {
+                    desktop.browse(new URI("https://en.wikipedia.org/wiki/Life-like_cellular_automaton"));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "https://en.wikipedia.org/wiki/Life-like_cellular_automaton", "Life-like cellular automaton is not reached", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+    
+    private class DocActionListener implements ActionListener {
+    	@Override
+        public void actionPerformed(ActionEvent e) {
+            if(e.getSource().equals(doc)) {
+            	Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+                try {
+                    desktop.browse(new URI("https://bmeedu-my.sharepoint.com/:b:/g/personal/leventeheizer_edu_bme_hu/EfVrZAKafs5Nl8pu-mT1a50BQzNy0cWZEr4ri3MBDC3vFQ?e=7Q6zjt"));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "https://bmeedu-my.sharepoint.com/:b:/g/personal/leventeheizer_edu_bme_hu/EfVrZAKafs5Nl8pu-mT1a50BQzNy0cWZEr4ri3MBDC3vFQ?e=7Q6zjt", "Life-like cellular automaton is not reached", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }

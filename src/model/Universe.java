@@ -13,26 +13,14 @@ public class Universe {
         for (int i = 0; i < 101; i++) {
             currentGen.add(new ArrayList());
             for (int j = 0; j < 101; j++) {
-                if (i > (50 - (N + 1)) && i < (50 + N) && j > (50 - (N + 1)) && j < (50 + N)) {
-                    if (Math.random() * 100 < 50) currentGen.get(i).add(j, Boolean.TRUE);
-                    else currentGen.get(i).add(j, Boolean.FALSE);
+                if (i > (50 - (N + 1)) && i < (50 + N + 1) && j > (50 - (N + 1)) && j < (50 + N + 1)) {
+                    currentGen.get(i).add(j, Boolean.TRUE);
                 } else {
                     currentGen.get(i).add(j, Boolean.FALSE);
                 }
             }
         }
         rule = new Rule(born, survive);
-    }
-
-    public Universe(int N) {
-        rule = new Rule(new int[]{3}, new int[]{2, 3});
-        currentGen = new ArrayList<>(N);
-        for (int i = 0; i < N; i++) {
-            currentGen.add(new ArrayList());
-            for (int j = 0; j < N; j++) {
-                currentGen.get(i).add(j, Boolean.FALSE);
-            }
-        }
     }
 
     public void FillUniverse(ArrayList<ArrayList<Boolean>> universe) {
@@ -42,6 +30,8 @@ public class Universe {
     public Rule getRule() { return rule; }
 
     public ArrayList<ArrayList<Boolean>> getCurrentGen() { return currentGen; }
+    
+    public ArrayList<ArrayList<Boolean>> getNextGen() { return nextGen; }
 
     public void setCurrentGen(ArrayList<ArrayList<Boolean>> state) {
         for (int i = 0; i < state.size(); i++) {
@@ -60,14 +50,16 @@ public class Universe {
     }
 
     public int getSize() { return currentGen.size(); }
-
-    public int countNeighbours(int i, int j) {
-        int up = (i == 0) ? currentGen.size() - 1 : i - 1;
-        int down = (i == currentGen.size() - 1) ? 0 : i + 1;
-        int left = (j == 0) ? currentGen.size() - 1 : j - 1;
-        int right = (j == currentGen.size() - 1) ? 0 : j + 1;
-
-        boolean[] neighbours = new boolean[8];
+    
+    																 
+    public int countNeighbours(int i, int j) {						//A szimulacioban resztvevo cellak Moore-kornyezetben vannak, igy ha az (i,j) indexek egy
+        int up = (i == 0) ? currentGen.size() - 1 : i - 1;			//	* a legfelso sorban levo cellat jelolnek ki, akkor annak a legalso sorban is vannak szomszedai
+        int down = (i == currentGen.size() - 1) ? 0 : i + 1;		//	* a legalso sorban levo cellat jelolnek ki, akkor annak a legfelso sorban is vannak szomszedai
+        int left = (j == 0) ? currentGen.size() - 1 : j - 1;		//	* a bal szelen levo cellat jelolnek ki, akkor annak a jobb szelen is vannak szomszedai
+        int right = (j == currentGen.size() - 1) ? 0 : j + 1;		//	* a jobb szelen levo cellat jelonek ki, akkor annak a bal szelen is vannak szomszedai
+        															//A fentiek miatt teljesul, hogy minden cellanak 8 szomszedja van.
+        
+        boolean[] neighbours = new boolean[8]; 						//Tomb amiben az aktualis cella szomszedainak allapotai vannak eltarolva
         neighbours[0] = currentGen.get(up).get(left);
         neighbours[1] = currentGen.get(up).get(j);
         neighbours[2] = currentGen.get(up).get(right);
@@ -81,15 +73,7 @@ public class Universe {
         for (boolean neighbour : neighbours) {
             if (neighbour) aliveNeighbours++;
         }
-        return aliveNeighbours;
-    }
-
-    public void print() {
-        for(int i = 0; i < currentGen.size(); i++) {
-            for(int j = 0; j < currentGen.get(i).size(); j++) {
-                System.out.print(currentGen.get(i).get(j) ? '0' : ' ');
-            } System.out.println();
-        } System.out.println();
+        return aliveNeighbours;										//elo szomszedok szama
     }
 
     public int aliveCells() {
@@ -104,26 +88,26 @@ public class Universe {
     public void generator() {
         nextGen = new ArrayList<>(currentGen.size());
         for (int i = 0; i < currentGen.size(); i++) {
-            nextGen.add(new ArrayList());
+            nextGen.add(new ArrayList());														
             for (int j = 0; j < currentGen.size(); j++) {
-                int neighbours = countNeighbours(i, j);
-                if(currentGen.get(i).get(j)) {
-                    if (rule.willSurvive(neighbours)) nextGen.get(i).add(j, Boolean.TRUE);
-                    else nextGen.get(i).add(j, Boolean.FALSE);
-                } else {
-                    if(rule.willBorn(neighbours)) nextGen.get(i).add(j, Boolean.TRUE);
-                    else nextGen.get(i).add(j, Boolean.FALSE);
+                int neighbours = countNeighbours(i, j);											//Az aktualis sejt elo szomszedaiank szam
+                if(currentGen.get(i).get(j)) {													//Ha sejt el
+                    if (rule.willSurvive(neighbours)) nextGen.get(i).add(j, Boolean.TRUE);		//Es az elo szomszedainak szama szerepel a survice tombben, akkor as sejt eletben  marad
+                    else nextGen.get(i).add(j, Boolean.FALSE);									//Ha nem meghal
+                } else {																		//Ha a sejt nem el
+                    if(rule.willBorn(neighbours)) nextGen.get(i).add(j, Boolean.TRUE);			//Es az elo szomszedainak szama szerepel a born tombben, akkor a sejt eletre kel
+                    else nextGen.get(i).add(j, Boolean.FALSE);									//Ha nincs benne, akkor halott marad
                 }
             }
         }
-        currentGen = nextGen;
+        currentGen = nextGen;																	//actGen felulirasa nextGen-el
     }
-
-    public void AutoFill(int percentage, int size) {
-        for (int i = 0; i < 101; i++) {
-            for (int j = 0; j < 101; j++) {
-                if (i > (50 - (size)) && i < (50 + (size)) && j > (50 - (size)) && j < (50 + (size))) {
-                    if (Math.random() * 100 < percentage) currentGen.get(i).set(j, Boolean.TRUE);
+    
+    public void AutoFill(double probability, int size) {										//probability: annak a vszg-e, hogy egy sejt elo
+        for (int i = 0; i < 101; i++) {															//size: hanyszor hanyas reszt foglaljon el a kezdoallpot a sejtterbol
+            for (int j = 0; j < 101; j++) {														
+                if (i > (50 - (size + 1)) && i < (50 + (size + 1)) && j > (50 - (size + 1)) && j < (50 + (size + 1))) {
+                    if (Math.random() < probability) currentGen.get(i).set(j, Boolean.TRUE);
                     else currentGen.get(i).set(j, Boolean.FALSE);
                 } else {
                     currentGen.get(i).set(j, Boolean.FALSE);

@@ -1,7 +1,5 @@
 package controller;
 
-import model.Universe;
-
 import java.io.*;
 import java.util.ArrayList;
 
@@ -16,26 +14,25 @@ public class StateIO {
                 for (j = 0; j < universe.get(i).size() - 1; j++) {
                     line.append(universe.get(i).get(j) ? 0 : 1);
                     line.append(CSV_SEPARATOR);
-                } line.append(universe.get(i).get(j) ? 0 : 1);
+                } 
+                line.append(universe.get(i).get(j) ? 0 : 1);
                 bw.write(line.toString());
                 bw.newLine();
             }
             bw.flush();
             bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { }
     }
 
     //Egy *.csv fajlbol valo olvasas
-    public static ArrayList<ArrayList<Boolean>> readFromCSV() throws IOException {
+    public static ArrayList<ArrayList<Boolean>> readFromCSV(String file) throws IOException {
         ArrayList<ArrayList<Boolean>> readGen = new ArrayList<>(101);
         for (int i = 0; i < 101; i++) {
             readGen.add(new ArrayList());
         }
 
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("actualstate.csv")));
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             for(int i = 0; i < 101; i++) {
                 String line = br.readLine();
                 String[] cells = line.split(CSV_SEPARATOR);
@@ -44,8 +41,7 @@ public class StateIO {
                 }
             }
             br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } return readGen;
+        } catch (IOException e) { } 
+        return readGen;
     }
 }

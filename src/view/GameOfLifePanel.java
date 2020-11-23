@@ -10,8 +10,9 @@ import java.util.ArrayList;
 public class GameOfLifePanel extends JPanel implements Runnable {
     private JPanel[][] cells;
     private GameOfLifeController game_controller;
+    
     private int size;
-    Universe universe;
+    private Universe universe;
 
     public GameOfLifePanel(GameOfLifeController controller) {
         game_controller = controller;
@@ -28,7 +29,7 @@ public class GameOfLifePanel extends JPanel implements Runnable {
             for (int j = 0; j < game_controller.getUniverse().getSize(); j++) {
                 cells[i][j] = new JPanel();
                 cells[i][j].setBackground(Color.WHITE);
-                this.add(cells[i][j]);
+                add(cells[i][j]);
             }
         }
     }
@@ -52,7 +53,6 @@ public class GameOfLifePanel extends JPanel implements Runnable {
 
     public void overwriteUniverse(ArrayList<ArrayList<Boolean>> uni) {
         game_controller.getUniverse().setCurrentGen(uni);
-        repaint();
     }
 
     public void resetUniverse() {
@@ -61,12 +61,18 @@ public class GameOfLifePanel extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        universe.generator();
+    	long speed = game_controller.getSpeed();
+		universe.generator();
         drawUniverse();
-        revalidate();
-        try {
-            Thread.sleep(game_controller.getSpeed());
-            run();
-        } catch (InterruptedException e) { }
+        repaint();
+        if(universe.aliveCells() != 0) {
+        	if(universe.aliveCells() > 9000) speed = 2000;
+        	try {
+                Thread.sleep(speed);
+                run();
+            } catch (InterruptedException e) { }
+        }
     }
+    
+    public JPanel[][] getCells() { return cells; }
 }
