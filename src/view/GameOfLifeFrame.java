@@ -5,8 +5,8 @@ import controller.StateIO;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
+
 import java.io.IOException;
 import java.net.URI;
 
@@ -90,6 +90,7 @@ public class GameOfLifeFrame extends JFrame {
     }
 
     public GameOfLifePanel getPanel() { return panel; }
+    
 
     private class StartActionListener implements ActionListener {
 
@@ -144,7 +145,7 @@ public class GameOfLifeFrame extends JFrame {
             try {
                 panel.clearPanel();
                 game_controller.getUniverse().clearUniverse();
-                game_controller.getUniverse().FillUniverse(StateIO.readFromCSV("actualstate.csv"));
+                game_controller.getUniverse().setCurrentGen(StateIO.readFromCSV("actualstate.csv"));
                 panel.drawUniverse();
                 panel.repaint();
             } catch (IOException ex) {
@@ -154,15 +155,14 @@ public class GameOfLifeFrame extends JFrame {
     }
 
     private class AutofillActionListener implements ActionListener {
-    	public int percentage = 100;
-    	public int S = 3;
+    	public int percentage = 100;													//seged lokalis valtozo ahhoz, hogy %-ban merve mekkora valoszinuseggel legyen egy sejt elo 
+    	public int S = 3;																//seged lokalis valtozo ahhoz, hogy hanyszor hanyas legyen a kezdoallapot
     	
-        @Override
+    	@Override
         public void actionPerformed(ActionEvent e) {
             if (e.getSource().equals(autofill)) {
-
-                JFrame autofillFrame = new JFrame("Autofill");
-                autofillFrame.setSize(450, 100);
+                JFrame autofillFrame = new JFrame("Autofill");							
+                autofillFrame.setSize(450, 100);										
                 autofillFrame.setResizable(false);
                 autofillFrame.setLocationRelativeTo(null);
                 autofillFrame.setVisible(true);
@@ -170,19 +170,19 @@ public class GameOfLifeFrame extends JFrame {
                 JPanel AutoFillPanel = new JPanel();
                 JLabel percentageLabel = new JLabel("Choose probability:");
                 AutoFillPanel.add(percentageLabel);
-                Integer[] percentages = {15, 25, 35, 50, 100};
+                Integer[] percentages = {5, 15, 25, 35, 50, 100};						
                 JComboBox comboBox = new JComboBox(percentages);
                 AutoFillPanel.add(comboBox);
-                autofillFrame.add(AutoFillPanel);
                 comboBox.setSelectedItem(percentage);
 
                 JLabel sizeLabel = new JLabel("%     Choose size:");
                 AutoFillPanel.add(sizeLabel);
-                Integer[] sizes = {3, 5, 15, 25, 35, 45, 55, 85};
+                Integer[] sizes = {3, 5, 15, 25, 35, 45, 55, 85, 99};
                 JComboBox comboBox2 = new JComboBox(sizes);
                 AutoFillPanel.add(comboBox2);
-                autofillFrame.add(AutoFillPanel);
                 comboBox2.setSelectedItem(S);
+                
+                autofillFrame.add(AutoFillPanel);
 
                 comboBox.addActionListener(new ActionListener() {
                     @Override
@@ -213,6 +213,8 @@ public class GameOfLifeFrame extends JFrame {
                         autofillFrame.dispose();
                     }
                 });
+                
+                
             }
         }
     }
@@ -230,9 +232,9 @@ public class GameOfLifeFrame extends JFrame {
     }
 
     private class SetRuleActionListener implements ActionListener {
-    	public int[] bornArray;
-        public int[] surviveArray;
-    	int selectedItemIndex = 6;
+    	public int[] bornArray;										//seged lokalis valtozo a born tomb modositasahoz
+        public int[] surviveArray;									//seged lokalis valtozo a survive tomb modositasahoz
+    	int selectedItemIndex = 8;									//a rule elso megnyitaskor a custom legyen az alap;rtelmezett
     	
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -247,7 +249,7 @@ public class GameOfLifeFrame extends JFrame {
                 JLabel ruleLabel = new JLabel("Choose rule:");
                 rulePanel.add(ruleLabel);
                 
-                String[] rules = {"Game Of Life", "Life Without Death", "Replicator", "Serviettes", "Maze", "Cave", "Custom"};
+                String[] rules = {"Game Of Life", "Life Without Death", "Replicator", "Serviettes", "Maze", "Cave", "B357/S0123", "B2468/S045", "Custom"};
                 JComboBox comboBox = new JComboBox(rules);
                 rulePanel.add(comboBox);
                 ruleFrame.add(rulePanel);
@@ -279,6 +281,14 @@ public class GameOfLifeFrame extends JFrame {
                             case "Cave":
                                 game_controller.getUniverse().setRule(new int[]{6, 7, 8}, new int[]{3, 4, 5, 6, 7, 8});
                                 selectedItemIndex = 5;
+                                break;
+                            case "B357/S0123":
+                                game_controller.getUniverse().setRule(new int[]{3, 5, 7}, new int[]{0, 1, 2, 3});
+                                selectedItemIndex = 6;
+                                break;
+                            case "B2468/S045":
+                                game_controller.getUniverse().setRule(new int[]{2, 4, 6, 8}, new int[]{0, 4, 5});
+                                selectedItemIndex = 7;
                                 break;
                             case "Custom":
                                 JFrame CustomFrame = new JFrame("Custom");
@@ -330,7 +340,7 @@ public class GameOfLifeFrame extends JFrame {
                                         CustomFrame.dispose();
                                     }
                                 });
-                                selectedItemIndex = 6;
+                                selectedItemIndex = 8;
                                 break;
                         }
                         ruleFrame.dispose();
@@ -345,8 +355,8 @@ public class GameOfLifeFrame extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             if(e.getSource().equals(speed)) {
-                JFrame speedFrame = new JFrame("Speed");
-                speedFrame.setSize(300, 60);
+                JFrame speedFrame = new JFrame("Speed");								
+                speedFrame.setSize(300, 60);											
                 speedFrame.setResizable(false);
                 speedFrame.setLocationRelativeTo(null);
                 speedFrame.setVisible(true);
@@ -355,15 +365,15 @@ public class GameOfLifeFrame extends JFrame {
                 JLabel speedLabel = new JLabel("Set speed");
                 speedPanel.add(speedLabel);
                 
-                Long[] longs = {100L,200L,500L,1000L,2000L, 3000L};
-                JComboBox comboBox = new JComboBox(longs);
-                speedFrame.add(comboBox);
+                Long[] longs = {100L,200L,500L,1000L,2000L, 3000L};						//tomb a lehetseges keslelteteseknek
+                JComboBox comboBox = new JComboBox(longs);								//legordulo menu a kesleltets kivalasztasahoz
+                speedFrame.add(comboBox);											
                 comboBox.setSelectedItem(game_controller.getSpeed());
-                comboBox.addActionListener(new ActionListener(){
+                comboBox.addActionListener(new ActionListener(){						//ActionListener a kivalasztashoz
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        game_controller.setSpeed((Long) comboBox.getSelectedItem());
-                        speedFrame.dispose();
+                        game_controller.setSpeed((Long) comboBox.getSelectedItem());	//a controller beallitja a sebesseget
+                        speedFrame.dispose();											//ablak bezarasa a valasztas utan
                     }
                 });
             }
@@ -386,6 +396,7 @@ public class GameOfLifeFrame extends JFrame {
     }
     
     private class CellularActionListener implements ActionListener {
+    	
     	@Override
         public void actionPerformed(ActionEvent e) {
             if(e.getSource().equals(cellular)) {
@@ -400,6 +411,7 @@ public class GameOfLifeFrame extends JFrame {
     }
     
     private class DocActionListener implements ActionListener {
+    	
     	@Override
         public void actionPerformed(ActionEvent e) {
             if(e.getSource().equals(doc)) {

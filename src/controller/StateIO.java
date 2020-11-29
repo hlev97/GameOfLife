@@ -5,9 +5,10 @@ import java.util.ArrayList;
 
 public class StateIO {
     private static final String CSV_SEPARATOR = ";";
+    //actualstate.csv fajlba valo iras
     public static void writeToCSV(ArrayList<ArrayList<Boolean>> universe) throws IOException {
         try {
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("actualstate.csv"), "UTF-8"));
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("actualstate.csv")));
             for (int i = 0; i < universe.size(); i++) {
                 StringBuilder line = new StringBuilder();
                 int j;
@@ -26,7 +27,7 @@ public class StateIO {
 
     //Egy *.csv fajlbol valo olvasas
     public static ArrayList<ArrayList<Boolean>> readFromCSV(String file) throws IOException {
-        ArrayList<ArrayList<Boolean>> readGen = new ArrayList<>(101);
+        ArrayList<ArrayList<Boolean>> readGen = new ArrayList<>();
         for (int i = 0; i < 101; i++) {
             readGen.add(new ArrayList());
         }

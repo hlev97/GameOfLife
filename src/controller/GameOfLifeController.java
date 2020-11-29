@@ -5,19 +5,17 @@ import model.Universe;
 import java.util.ArrayList;
 
 public class GameOfLifeController {
-    private int size;
-    private long speed;
-    private boolean reverse;
-    private int[] born;
-    private int[] survive;
-    private Universe universe;
+    private int size;				//a sejtter meretenek beallitasahoz
+    private long speed;				//a szimulacio kesleltetesenek beallitasahoz
+    private int[] born;				//az aktualis szabaly beallitasahoz
+    private int[] survive;			//az aktualis szabaly beallitasahoz
+    private Universe universe;		//az univerzum beallitasahoz
 
-    public GameOfLifeController() {
-        size = 3;
-        speed = 1000;
-        reverse = false;
-        born = new int[]{1, 2, 7, 8};
-        survive = new int[]{0, 3, 5};
+    public GameOfLifeController() {		//a program inditasa utan, ezek szerint az ertekek szerint fog futni a szimulacio
+        size = 3;						//az kiindulo sejtter merete
+        speed = 1000;					//a szimulacio kesleltetesenek alap erteke
+        born = new int[]{1, 2, 7, 8};	//az alap szabaly a sejtek szuletesehez
+        survive = new int[]{0, 3, 5};	//az alap szabaly a sejtek eletben maradasahoz
         universe = new Universe(size, born, survive);
     }
 
@@ -30,5 +28,11 @@ public class GameOfLifeController {
     public void setSpeed(long s) { speed = s; }
 
     public long getSpeed() { return speed; }
-
+    
+    public Boolean isAlive(int i, int j) { return universe.getCurrentGen().get(i).get(j); }
+    
+    public int aliveCells() { return universe.aliveCells(); }
+    
+    public void generateNextState() { universe.evolve(); }
+    
 }
